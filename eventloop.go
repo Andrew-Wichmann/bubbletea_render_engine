@@ -9,24 +9,34 @@ import (
 )
 
 const targetFps = 60
+const linesGoRoutine = 10
 
-type EventLoop struct {
-	frameNum  int64
-	converter convert.ImageConverter
-	Frame     string
-	FPS       int64
+type GraphicsEngine struct {
+	frameNum       int64
+	converter      convert.ImageConverter
+	convertOptions convert.Options
+	Frame          string
+	FPS            int64
 }
 
-func NewEventLoop() EventLoop {
+func NewGraphicEngine(width, height int) GraphicsEngine {
 	converter := convert.NewImageConverter()
-	return EventLoop{converter: *converter}
+	convertOptions := convert.Options{
+		FitScreen:       false,
+		Colored:         true,
+		Reversed:        false,
+		StretchedScreen: false,
+		FixedWidth:      width,
+		FixedHeight:     height,
+	}
+	return GraphicsEngine{converter: *converter, convertOptions: convertOptions}
 }
 
-func (e *EventLoop) Run() tea.Msg {
+func (e *GraphicsEngine) Run() tea.Msg {
 	start := time.Now().Unix() - 1
 	for {
 		e.frameNum += 1
-		e.Frame = e.converter.ImageFile2ASCIIString(fmt.Sprintf("/home/twisted/Code/playing_with_goroutines/frames/frame_%d.png", e.frameNum%9+1), &convert.DefaultOptions)
+		e.Frame = e.converter.ImageFile2ASCIIString(fmt.Sprintf("./frames/frame_%d.png", e.frameNum%9+1), &e.convertOptions)
 		time.Sleep(time.Second / targetFps)
 		e.FPS = e.frameNum / (time.Now().Unix() - start)
 	}

@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"image"
+	"os"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -17,6 +19,9 @@ type GraphicsEngine struct {
 	convertOptions convert.Options
 	Frame          string
 	FPS            int64
+
+	// temp
+	frame_images []image.Image
 }
 
 func NewGraphicEngine(width, height int) GraphicsEngine {
@@ -33,11 +38,39 @@ func NewGraphicEngine(width, height int) GraphicsEngine {
 }
 
 func (e *GraphicsEngine) Run() tea.Msg {
+	// temp
+	frames, err := os.ReadDir("./frames")
+	if err != nil {
+		panic(err)
+	}
+	for _, frame := range frames {
+		image, err := OpenImageFile(fmt.Sprintf("%s/%s", "./frames/", frame.Name()))
+		if err != nil {
+			panic(err)
+		}
+		e.frame_images = append(e.frame_images, image)
+	}
+
 	start := time.Now().Unix() - 1
 	for {
 		e.frameNum += 1
-		e.Frame = e.converter.ImageFile2ASCIIString(fmt.Sprintf("./frames/frame_%d.png", e.frameNum%9+1), &e.convertOptions)
+		e.Frame = e.converter.Image2ASCIIString(e.frame_images[e.frameNum%8+1], &e.convertOptions)
 		time.Sleep(time.Second / targetFps)
 		e.FPS = e.frameNum / (time.Now().Unix() - start)
 	}
+}
+
+func OpenImageFile(imageFilename string) (image.Image, error) {
+	f, err := os.Open(imageFilename)
+	if err != nil {
+		return nil, err
+	}
+
+	img, _, err := image.Decode(f)
+	if err != nil {
+		return nil, err
+	}
+
+	defer f.Close()
+	return img, nil
 }

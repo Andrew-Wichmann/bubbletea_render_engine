@@ -20,7 +20,7 @@ type GraphicsEngine struct {
 	convertOptions convert.Options
 	frame          string
 	FPS            int64
-	nextFrame      chan interface{}
+	frameRequested chan string
 
 	// temp
 	frame_images []image.Image
@@ -36,7 +36,7 @@ func NewGraphicEngine(width, height int) GraphicsEngine {
 		FixedWidth:      width,
 		FixedHeight:     height / goRoutines,
 	}
-	return GraphicsEngine{converter: *converter, convertOptions: convertOptions, nextFrame: make(chan interface{})}
+	return GraphicsEngine{converter: *converter, convertOptions: convertOptions, frameRequested: make(chan string, 3)}
 }
 
 func (e *GraphicsEngine) Run() tea.Msg {
@@ -69,15 +69,13 @@ func (e *GraphicsEngine) Run() tea.Msg {
 			close(results)
 		}()
 
-		e.frame = collectResults(results)
 		e.FPS = e.frameNum / (time.Now().Unix() - start)
-		<-e.nextFrame
+		e.frameRequested <- collectResults(results)
 	}
 }
 
 func (e GraphicsEngine) Frame() string {
-	e.nextFrame <- nil
-	return e.frame
+	return <-e.frameRequested
 }
 
 func collectResults(results chan workerResult) string {

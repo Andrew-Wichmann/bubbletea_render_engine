@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"image"
-	"log"
 	"os"
 	"strings"
 	"sync"
@@ -13,15 +12,15 @@ import (
 	"github.com/qeesung/image2ascii/convert"
 )
 
-const targetFps = 60
 const goRoutines = 27
 
 type GraphicsEngine struct {
 	frameNum       int64
 	converter      convert.ImageConverter
 	convertOptions convert.Options
-	Frame          string
+	frame          string
 	FPS            int64
+	nextFrame      chan interface{}
 
 	// temp
 	frame_images []image.Image
@@ -37,7 +36,7 @@ func NewGraphicEngine(width, height int) GraphicsEngine {
 		FixedWidth:      width,
 		FixedHeight:     height / goRoutines,
 	}
-	return GraphicsEngine{converter: *converter, convertOptions: convertOptions}
+	return GraphicsEngine{converter: *converter, convertOptions: convertOptions, nextFrame: make(chan interface{})}
 }
 
 func (e *GraphicsEngine) Run() tea.Msg {
@@ -58,7 +57,7 @@ func (e *GraphicsEngine) Run() tea.Msg {
 	var wg sync.WaitGroup
 	for {
 		e.frameNum += 1
-		rect := e.frame_images[1].Bounds()
+		rect := e.frame_images[0].Bounds()
 		results := make(chan workerResult, rect.Max.Y/goRoutines)
 		for i := range goRoutines {
 			wg.Add(1)
@@ -70,10 +69,15 @@ func (e *GraphicsEngine) Run() tea.Msg {
 			close(results)
 		}()
 
-		e.Frame = collectResults(results)
-		time.Sleep(time.Second / targetFps)
+		e.frame = collectResults(results)
 		e.FPS = e.frameNum / (time.Now().Unix() - start)
+		<-e.nextFrame
 	}
+}
+
+func (e GraphicsEngine) Frame() string {
+	e.nextFrame <- nil
+	return e.frame
 }
 
 func collectResults(results chan workerResult) string {

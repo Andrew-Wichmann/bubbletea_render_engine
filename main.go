@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -50,7 +49,7 @@ func (a app) View() string {
 	if a.state == INIT {
 		return ""
 	} else {
-		return fmt.Sprintf("%s\nFPS:%d", a.e.Frame(), a.e.FPS)
+		return a.e.Frame()
 	}
 }
 

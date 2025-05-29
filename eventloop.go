@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/qeesung/image2ascii/convert"
@@ -19,7 +18,6 @@ type GraphicsEngine struct {
 	converter      convert.ImageConverter
 	convertOptions convert.Options
 	frame          string
-	FPS            int64
 	frameRequested chan string
 
 	// temp
@@ -53,7 +51,6 @@ func (e *GraphicsEngine) Run() tea.Msg {
 		e.frame_images = append(e.frame_images, image)
 	}
 
-	start := time.Now().Unix() - 1
 	var wg sync.WaitGroup
 	for {
 		e.frameNum += 1
@@ -69,7 +66,6 @@ func (e *GraphicsEngine) Run() tea.Msg {
 			close(results)
 		}()
 
-		e.FPS = e.frameNum / (time.Now().Unix() - start)
 		e.frameRequested <- collectResults(results)
 	}
 }

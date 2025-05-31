@@ -1,4 +1,4 @@
-module github.com/Andrew-Wichmann/playing_with_goroutines
+module github.com/Andrew-Wichmann/bubbletea_render_engine
 
 go 1.23.3
 

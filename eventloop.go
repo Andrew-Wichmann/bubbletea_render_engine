@@ -17,8 +17,7 @@ type GraphicsEngine struct {
 	frameNum       int64
 	converter      convert.ImageConverter
 	convertOptions convert.Options
-	frame          string
-	frameRequested chan string
+	frameChannel   chan string
 
 	// temp
 	frame_images []image.Image
@@ -34,7 +33,7 @@ func NewGraphicEngine(width, height int) GraphicsEngine {
 		FixedWidth:      width,
 		FixedHeight:     height / goRoutines,
 	}
-	return GraphicsEngine{converter: *converter, convertOptions: convertOptions, frameRequested: make(chan string, 3)}
+	return GraphicsEngine{converter: *converter, convertOptions: convertOptions, frameChannel: make(chan string, 3)}
 }
 
 func (e *GraphicsEngine) Run() tea.Msg {
@@ -66,12 +65,12 @@ func (e *GraphicsEngine) Run() tea.Msg {
 			close(results)
 		}()
 
-		e.frameRequested <- collectResults(results)
+		e.frameChannel <- collectResults(results)
 	}
 }
 
 func (e GraphicsEngine) Frame() string {
-	return <-e.frameRequested
+	return <-e.frameChannel
 }
 
 func collectResults(results chan workerResult) string {
